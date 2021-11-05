@@ -1,11 +1,272 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <title>Abstand darstellen</title>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.20/fabric.js"></script>
+    <style id="compiled-css" type="text/css">
+    </style>
   </head>
   <body>
-    
-    
+    <canvas id="myCanvas" style="border: 1px solid black;"></canvas>
+
+<div class="controls">
+  <p>
+    <label><span>Abstand:</span> <input type="range" id="dist_car-control" value="0.1" min="0.1" max="3" step="0.1"></label>
+  </p>
+  <p>
+    <label><span>KFZ Breite:</span> <input type="range" id="car-control" value="2" min="0.6" max="3.0" step="0.01"></label>
+  </p>
+  <p>
+    <label><span>Fahrbahnbreite:</span> <input type="range" id="right_lane-control" value="12" min="0.6" max="15" step="0.1"></label>
+  </p>
+  <p>
+    <label><span>Straßenbreite:</span> <input type="range" id="street-control" value="1.5" min="1.5" max="20" step="0.1"></label>
+  </p>
+  <p>
+    <label><span>Abstand Fahrbahnrand:</span> <input type="range" id="dist_right-control" value="0.4" min="-1.0" max="4.0" step="0.01"></label>
+  </p>
+  <p>
+    <label><span>Radfahrer Breite:</span> <input type="range" id="cyclist-control" value="0.8" min="0.5" max="2.8" step="0.01"></label>
+  </p>
+</div>
+
+
+    <script type="text/javascript">//<![CDATA[
+
+
+var width_street = 7.0; // street width in m
+var width_right_lane = 3.5; // right lane in m
+var width_car = 2.0; // width of the car in m
+var width_cyclist = 0.8; // width of the cyclist in m
+var width_dist_right = 0.5; // width of the distance to the right street border in m
+var width_verge = 0.2; // width of the verge in m
+var width_marking = 0.12; // width of markings in m
+var width_border = 0.3; // width of a border in m (better visibility)
+var width_dist_car = 1.5; // width of the distance car to cyclist in m
+var height_cyclist = 1.8; // height of the cyclist in m
+var height_car = 1.5; // height of the car in m
+var height_street = 0.15; // height of the street in m
+var svg_car = "https://www.svgrepo.com/show/24109/car.svg";
+var svg_bike = "https://www.svgrepo.com/show/157948/cyclist.svg";
+var svg_street = "http://upload.wikimedia.org/wikipedia/commons/d/d2/Svg_example_square.svg";
+
+var $ = function(id) {
+  return document.getElementById(id)
+};
+
+
+var canvas = document.getElementById("myCanvas");
+canvas.width = window.innerWidth - 30;
+canvas.height = window.innerHeight - 30;
+canvas.top = 15;
+canvas.left = 15;
+
+
+const col_street = 'rgba(10, 10, 10, 0.9)';
+const col_marking = 'rgba(250, 250, 250, 0.9)';
+
+
+var rect_street = new fabric.Rect({
+  fill: col_street,
+  selectable: false
+});
+var rect_street_marking_left = new fabric.Rect({
+  fill: col_marking,
+  selectable: false
+});
+var rect_street_marking_right = new fabric.Rect({
+  fill: col_marking,
+  selectable: false
+});
+var rect_street_marking_center = new fabric.Rect({
+  fill: col_marking,
+  selectable: false,
+  resizable: false
+});
+var line_car_left = new fabric.Rect({
+  width: 1,
+  fill: col_street,
+  selectable: false,
+  resizable: false
+});
+var line_car_right = new fabric.Rect({
+  width: 1,
+  fill: col_street,
+  selectable: true,
+  resizable: false
+});
+var rect_car = new fabric.Rect({
+  width: cP(width_car),
+  fill: col_street,
+  selectable: false,
+  resizable: false
+});
+var rect_cyclist = new fabric.Rect({
+  width: cP(width_cyclist),
+  fill: col_street,
+  selectable: false,
+  resizable: false
+});
+
+function setRectDims(rect, m_top, m_left, m_width, m_height) {
+  rect.top = cP(m_top);
+  rect.left = cP(m_left);
+  if (m_width >= 0)
+    rect.width = cP(m_width);
+  if (m_height >= 0)
+    rect.height = cP(m_height);
+}
+
+function recalcScene(canvas) {
+  width_dist_car = parseFloat($('dist_car-control').value);
+  width_car = parseFloat($('car-control').value);
+  width_right_lane = parseFloat($('right_lane-control').value);
+  width_street = parseFloat($('street-control').value);
+  width_dist_right = parseFloat($('dist_right-control').value);
+  width_cylist = parseFloat($('cyclist-control').value);
+  
+  const height_max = Math.max(height_car, height_cyclist);
+  var m_cyclist_left = width_border + width_street - width_border - width_verge - width_marking - width_dist_right - width_cyclist;
+  var m_car_left = m_cyclist_left - width_dist_car - width_car;
+
+  setRectDims(rect_street_marking_center,
+    height_max - 0.01,
+    width_border + width_street - width_verge - width_marking - width_right_lane - width_marking,
+    width_marking,
+    height_street);
+  setRectDims(rect_street_marking_right,
+    height_max - 0.01,
+    width_border + width_street - width_verge - width_marking,
+    width_marking,
+    height_street);
+  setRectDims(rect_street_marking_left,
+    height_max - 0.01,
+    width_border + width_verge,
+    width_marking,
+    height_street);
+  setRectDims(rect_street,
+    height_max,
+    width_border,
+    width_street,
+    height_street);
+  setRectDims(line_car_left,
+    height_max - height_car,
+    width_border + width_street - width_verge - width_marking - width_cyclist - width_dist_car - width_car,
+    -1,
+    height_car + 2 * height_street);
+  setRectDims(line_car_right,
+    height_max - height_car,
+    width_border + width_street - width_verge - width_marking - width_dist_car - width_cyclist - width_dist_car,
+    -1,
+    height_car + 2 * height_street);
+  setRectDims(rect_car,
+    height_max - height_car,
+    width_border + width_street - width_verge - width_marking - width_dist_car - width_cyclist - width_dist_car,
+    width_car,
+    height_car + 2 * height_street);
+  canvas.renderAll();
+}
+
+
+(function() {
+  var canvas = this.__canvas = new fabric.Canvas('myCanvas');
+  fabric.Object.prototype.transparentCorners = false;
+
+  canvas.add(rect_street);
+  canvas.add(rect_street_marking_left);
+  canvas.add(rect_street_marking_right);
+  canvas.add(rect_street_marking_center);
+  canvas.add(line_car_left);
+  canvas.add(line_car_right);
+  canvas.add(rect_car);
+  canvas.add(rect_cyclist);
+  recalcScene(canvas);
+
+  var angleControl = $('car-control');
+  angleControl.oninput = function() {
+    recalcScene(canvas);
+  };
+
+  var scaleControl = $('right_lane-control');
+  scaleControl.oninput = function() {
+    recalcScene(canvas);
+  };
+
+  var streetControl = $('street-control');
+  streetControl.oninput = function() {
+    recalcScene(canvas);
+  };
+
+  var distControl = $('dist_car-control');
+  distControl.oninput = function() {
+    recalcScene(canvas);
+  };
+
+  var skewXControl = $('skewX-control');
+  skewXControl.oninput = function() {
+    rect.set('skewX', parseInt(this.value, 10)).setCoords();
+    canvas.requestRenderAll();
+  };
+
+  var skewYControl = $('skewY-control');
+  skewYControl.oninput = function() {
+    rect.set('skewY', parseInt(this.value, 10)).setCoords();
+    canvas.requestRenderAll();
+  };
+
+  angleControl.value = width_car;
+  scaleControl.value = width_right_lane;
+  streetControl.value = width_street;
+  distControl.value = width_dist_car;
+
+})();
+
+const imageUrls = [
+  "https://www.svgrepo.com/show/24109/car.svg",
+  "https://www.svgrepo.com/show/157948/cyclist.svg",
+  "https://www.svgrepo.com/show/322952/person.svg"
+];
+
+function cP(meters) {
+  var fullwidth_m = width_border * 2 + width_street;
+  var m_per_pixel = canvas.width / fullwidth_m;
+  return meters * m_per_pixel;
+}
+
+
+
+  //]]></script>
+
+  <script>
+    // tell the embed parent frame the height of the content
+    if (window.parent && window.parent.parent){
+      window.parent.parent.postMessage(["resultsFrame", {
+        height: document.body.getBoundingClientRect().height,
+        slug: ""
+      }], "*")
+    }
+
+    // always overwrite window.name, in case users try to set it manually
+    window.name = "result"
+  </script>
+
+    <script>
+      let allLines = []
+
+      window.addEventListener("message", (message) => {
+        if (message.data.console){
+          let insert = document.querySelector("#insert")
+          allLines.push(message.data.console.payload)
+          insert.innerHTML = allLines.join(";\r")
+
+          let result = eval.call(null, message.data.console.payload)
+          if (result !== undefined){
+            console.log(result)
+          }
+        }
+      })
+    </script>    
   </body>
 </html>
   
