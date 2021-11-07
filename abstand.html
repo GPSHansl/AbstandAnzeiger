@@ -21,10 +21,10 @@
     <canvas id="myCanvas" style="border: 1px solid black;"></canvas>
 	<div id="controls" class="controls">
 		<p>
-			<label><span>Abstand:</span> <input type="range" id="dist_car-control" value="0.1" min="0.1" max="3" step="0.1">&nbsp;(<span id="dist_car-lbl"></span>)</label>
+			<label><span>Abstand:</span> <input type="range" id="dist_car-control" value="0.1" min="-0.5" max="3" step="0.05">&nbsp;(<span id="dist_car-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><span>KFZ Breite:</span> <input type="range" id="car-control" value="2" min="0.6" max="3.0" step="0.01">&nbsp;(<span id="car-lbl"></span>)</label>
+			<label><span>KFZ Breite:</span> <input type="range" id="car-control" value="2" min="0.6" max="3.0" step="0.05">&nbsp;(<span id="car-lbl"></span>)</label>
 		</p>
 		<p>
 			<label><span>Fahrbahnbreite:</span> <input type="range" id="right_lane-control" value="12" min="0.6" max="15" step="0.1">&nbsp;(<span id="right_lane-lbl"></span>)</label>
@@ -66,14 +66,14 @@ var $ = function(id) {
 
 
 
+const col_both_lanes = 'rgba(100, 100, 100, 0.2)';
+const col_car = 'rgba(100, 10, 10, 0.2)';
+const col_distance = 'rgba(0, 10, 150, 0.2)';
 const col_street = 'rgba(10, 10, 10, 0.9)';
+const col_cyclist = 'rgba(10, 100, 10, 0.2)';
 const col_marking = 'rgba(250, 250, 250, 0.9)';
+const col_lane = 'rgba(200, 200, 200, 0.9)';
 
-var rect_cyclist = new fabric.Rect({
-  fill: col_street,
-  selectable: false,
-  resizable: false
-});
 var rect_street = new fabric.Rect({
   fill: col_street,
   selectable: false
@@ -93,26 +93,64 @@ var rect_street_marking_center = new fabric.Rect({
 });
 var line_car_left = new fabric.Rect({
   width: 1,
-  fill: col_street,
+  fill: col_car,
   selectable: false,
   resizable: false
 });
 var line_car_right = new fabric.Rect({
   width: 1,
-  fill: col_street,
+  fill: col_car,
   selectable: true,
   resizable: false
 });
 var rect_car = new fabric.Rect({
-  fill: col_street,
+  fill: col_car,
   selectable: false,
   resizable: false
 });
-var text_car = new fabric.Text("car", { fontSize: 12});
-var text_distcar = new fabric.Text("distcar", { fontSize: 12});
-var text_cyclist = new fabric.Text("cyclist", { fontSize: 12});
-var text_lane = new fabric.Text("lane", { fontSize: 12});
-var text_street = new fabric.Text("street", { fontSize: 12});
+var rect_cyclist = new fabric.Rect({
+  fill: col_cyclist,
+  selectable: false,
+  resizable: false
+});
+var line_cyclist_right = new fabric.Rect({
+  width: 1,
+  fill: col_cyclist,
+  selectable: false,
+  resizable: false
+});
+var line_cyclist_left = new fabric.Rect({
+  width: 1,
+  fill: col_cyclist,
+  selectable: false,
+  resizable: false
+});
+var textbg_car = new fabric.Rect({
+	fill: col_car,
+	selectable: false
+});
+var textbg_cyclist = new fabric.Rect({
+	fill: col_cyclist,
+	selectable: false
+});
+var textbg_dist_car = new fabric.Rect({
+	fill: col_distance,
+	selectable: false
+});
+var textbg_both_lanes = new fabric.Rect({
+	fill: col_both_lanes,
+	selectable: false
+});
+var textbg_right_lane = new fabric.Rect({
+	fill: col_lane,
+	selectable: false
+});
+
+var text_car = new fabric.Text("car", { fontSize: 12, selectable: false});
+var text_dist_car = new fabric.Text("distcar", { fontSize: 12, selectable: false});
+var text_cyclist = new fabric.Text("cyclist", { fontSize: 12, selectable: false});
+var text_right_lane = new fabric.Text("right_lane", { fontSize: 12, selectable: false});
+var text_both_lanes = new fabric.Text("both_lanes", { fontSize: 12, selectable: false});
 
 
 function setRectDims(rect, m_top, m_left, m_width, m_height) {
@@ -122,25 +160,30 @@ function setRectDims(rect, m_top, m_left, m_width, m_height) {
     rect.width = cP(m_width);
   if (m_height)
     rect.height = cP(m_height);
+	  rect.set('dirty', true);
 }
 
 function recalcScene(canvas) {
   width_dist_car = parseFloat($('dist_car-control').value);
   width_car = parseFloat($('car-control').value);
   width_right_lane = parseFloat($('right_lane-control').value);
-  width_street = parseFloat($('street-control').value);
+  width_both_lanes = parseFloat($('street-control').value);
+  // width_street = parseFloat($('street-control').value);
   width_dist_right = parseFloat($('dist_right-control').value);
-  width_cylist = parseFloat($('cyclist-control').value);
+  width_cyclist = parseFloat($('cyclist-control').value);
+  
+  width_street = 2* width_verge + 2*width_marking+ width_both_lanes;
+  
   
   $('dist_car-lbl').textContent = width_dist_car + " m";
   $('car-lbl').textContent = width_car + " m";
   $('right_lane-lbl').textContent = width_right_lane + " m";
-  $('street-lbl').textContent = width_street + " m";
+  $('street-lbl').textContent = width_both_lanes + " m";
   $('dist_right-lbl').textContent = width_dist_right + " m";
   $('cyclist-lbl').textContent = width_cyclist + " m";
   
   const height_max = Math.max(height_car, height_cyclist);
-  var m_street_r = width_border + width_street;
+  var m_street_r = width_border + 2* width_verge + 2* width_marking + width_both_lanes;
   var m_marking_r = m_street_r - width_verge;
   var m_marking_l = m_marking_r - width_marking;
   var m_cyclist_r = m_marking_r - width_dist_right;
@@ -148,11 +191,6 @@ function recalcScene(canvas) {
   var m_car_r = m_cyclist_l - width_dist_car;
   var m_car_l = m_car_r - width_car;
 
-  setRectDims(rect_cyclist,
-    height_max - height_cyclist,
-    m_cyclist_l,
-    width_cyclist,
-    height_cyclist);
   setRectDims(rect_street,
     height_max,
     width_border,
@@ -188,19 +226,62 @@ function recalcScene(canvas) {
     m_car_l,
     width_car,
     height_car);
+  setRectDims(rect_cyclist,
+    height_max - height_cyclist,
+    m_cyclist_l,
+    width_cyclist,
+    height_cyclist);
+  setRectDims(line_cyclist_left,
+    height_max - height_cyclist,
+    m_cyclist_l,
+    null,
+    height_cyclist + 2 * height_street);
+  setRectDims(line_cyclist_right,
+    height_max - height_cyclist,
+    m_cyclist_r,
+    null,
+    height_cyclist + 2 * height_street);
 
 
 	text_car.text = width_car+ " m";
 	text_car.top = cP(height_max + 2*height_street);
 	text_car.left = cP((m_car_l + m_car_r)/2) - text_car.width/2;
+	setRectDims(textbg_car, 
+		height_max + 2*height_street,
+		m_car_l,
+		width_car, height_street);
 	
-	text_distcar.text = width_dist_car+ " m";
-	text_distcar.top = cP(height_max + 2*height_street);
-	text_distcar.left = cP((m_car_r + m_cyclist_l)/2) - text_distcar.width/2;
+	text_dist_car.text = width_dist_car+ " m";
+	text_dist_car.top = cP(height_max + 2*height_street);
+	text_dist_car.left = cP((m_car_r + m_cyclist_l)/2) - text_dist_car.width/2;
+	setRectDims(textbg_dist_car, 
+		height_max + 2*height_street,
+		m_car_r,
+		width_dist_car, height_street);
 
 	text_cyclist.text = width_cyclist + " m";
 	text_cyclist.top = cP(height_max + 2*height_street);
 	text_cyclist.left = cP((m_cyclist_l + m_cyclist_r)/2) - text_cyclist.width/2;
+	setRectDims(textbg_cyclist, 
+		height_max + 2*height_street,
+		m_cyclist_l,
+		width_cyclist, height_street);
+
+	text_both_lanes.text = width_both_lanes + " m";
+	text_both_lanes.top = cP(height_max + 4*height_street);
+	text_both_lanes.left = cP(width_border + width_marking + (width_street/2)) - text_both_lanes.width/2;
+	setRectDims(textbg_both_lanes, 
+		height_max + 4*height_street,
+		width_border + width_verge + width_marking,
+		width_both_lanes, height_street);
+
+	text_right_lane.text = width_right_lane + " m";
+	text_right_lane.top = cP(height_max + 3*height_street);
+	text_right_lane.left = cP(m_marking_l - width_right_lane/2) - text_right_lane.width/2;
+	setRectDims(textbg_right_lane, 
+		height_max + 3*height_street,
+		m_marking_l - width_right_lane,
+		width_right_lane, height_street);
 
 	canvas.renderAll();
 }
@@ -229,11 +310,18 @@ var canvas;
 	canvas.add(line_car_left);
 	canvas.add(line_car_right);
 	canvas.add(rect_car);
+    canvas.add(textbg_car);
     canvas.add(text_car);
-    canvas.add(text_distcar);
+    canvas.add(textbg_dist_car);
+    canvas.add(text_dist_car);
+    canvas.add(textbg_cyclist);
     canvas.add(text_cyclist);
-    canvas.add(text_lane);
-    canvas.add(text_street);
+	canvas.add(textbg_right_lane);
+    canvas.add(text_right_lane);
+	canvas.add(textbg_both_lanes);
+    canvas.add(text_both_lanes);
+	canvas.add(line_cyclist_left);
+	canvas.add(line_cyclist_right);
 
 	var cyclistControl = $('cyclist-control');
 	var distCarControl = $('dist_car-control');
@@ -281,7 +369,7 @@ function cP(meters) {
 	var canvas = $("myCanvas");
 	var fullwidth_m = width_border * 2 + width_street;
 	var m_per_pixel = canvas.width / fullwidth_m;
-	return meters * m_per_pixel;
+	return Math.round(meters * m_per_pixel);
 }
 
 
