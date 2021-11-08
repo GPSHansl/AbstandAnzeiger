@@ -56,9 +56,9 @@ var width_dist_car = 1.5; // width of the distance car to cyclist in m
 var height_cyclist = 1.8; // height of the cyclist in m
 var height_car = 1.5; // height of the car in m
 var height_street = 0.15; // height of the street in m
-var svg_car = "https://www.svgrepo.com/show/24109/car.svg";
-var svg_bike = "https://www.svgrepo.com/show/157948/cyclist.svg";
-var svg_street = "http://upload.wikimedia.org/wikipedia/commons/d/d2/Svg_example_square.svg";
+
+var imgurl_car = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/auto_mit.png";
+var imgurl_cyclist = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/radler.png";
 
 var $ = function(id) {
   return document.getElementById(id)
@@ -152,6 +152,19 @@ var text_cyclist = new fabric.Text("cyclist", { fontSize: 12, selectable: false}
 var text_right_lane = new fabric.Text("right_lane", { fontSize: 12, selectable: false});
 var text_both_lanes = new fabric.Text("both_lanes", { fontSize: 12, selectable: false});
 
+var img_cyclist = null;
+fabric.Image.fromURL(imgurl_cyclist, function(myImg) {
+	canvas.add(myImg); 
+	img_cyclist = myImg;
+	myImg.selectable = false;
+});
+var img_car = null;
+fabric.Image.fromURL(imgurl_car, function(myImg) {
+	canvas.add(myImg); 
+	img_car = myImg;
+	myImg.selectable = false;
+});
+
 
 function setRectDims(rect, m_top, m_left, m_width, m_height) {
   rect.top = cP(m_top);
@@ -164,6 +177,8 @@ function setRectDims(rect, m_top, m_left, m_width, m_height) {
 }
 
 function recalcScene(canvas) {
+	
+
   width_dist_car = parseFloat($('dist_car-control').value);
   width_car = parseFloat($('car-control').value);
   width_right_lane = parseFloat($('right_lane-control').value);
@@ -173,7 +188,12 @@ function recalcScene(canvas) {
   width_cyclist = parseFloat($('cyclist-control').value);
   
   width_street = 2* width_verge + 2*width_marking+ width_both_lanes;
-  
+  if (img_car) {
+	height_car = img_car.height/img_car.width*width_car;
+  }
+  if (img_cyclist) {
+	height_cyclist = img_cyclist.height/img_cyclist.width*width_cyclist;
+  }
   
   $('dist_car-lbl').textContent = width_dist_car + " m";
   $('car-lbl').textContent = width_car + " m";
@@ -226,6 +246,19 @@ function recalcScene(canvas) {
     m_car_l,
     width_car,
     height_car);
+	
+	if (img_car) {
+		img_car.left = cP(m_car_l);
+		img_car.top = cP(height_max - height_car);
+		img_car.scaleX = cP(width_car) / img_car.width;
+		img_car.scaleY = cP(height_car) / img_car.height;
+	}
+	if (img_cyclist) {
+		img_cyclist.left = cP(m_cyclist_l);
+		img_cyclist.top = cP(height_max - height_cyclist);
+		img_cyclist.scaleX = cP(width_cyclist) / img_cyclist.width;
+		img_cyclist.scaleY = cP(height_cyclist) / img_cyclist.height;
+	}
   setRectDims(rect_cyclist,
     height_max - height_cyclist,
     m_cyclist_l,
@@ -241,7 +274,6 @@ function recalcScene(canvas) {
     m_cyclist_r,
     null,
     height_cyclist + 2 * height_street);
-
 
 	text_car.text = width_car+ " m";
 	text_car.top = cP(height_max + 2*height_street);
@@ -282,6 +314,8 @@ function recalcScene(canvas) {
 		height_max + 3*height_street,
 		m_marking_l - width_right_lane,
 		width_right_lane, height_street);
+
+
 
 	canvas.renderAll();
 }
@@ -358,12 +392,6 @@ var canvas;
 
 	recalcScene(canvas);	
 })();
-
-const imageUrls = [
-  "https://www.svgrepo.com/show/24109/car.svg",
-  "https://www.svgrepo.com/show/157948/cyclist.svg",
-  "https://www.svgrepo.com/show/322952/person.svg"
-];
 
 function cP(meters) {
 	var canvas = $("myCanvas");
