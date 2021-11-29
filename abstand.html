@@ -1,409 +1,505 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title>Abstand darstellen</title>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.20/fabric.js"></script>
-    <style id="compiled-css" type="text/css">
-      .controls {
-        float: both;
-        position: absolute;
-        border: 1px solid blue;
-		padding: 5px;
-      }
-	  .controls p {
-		padding: 0;
-		margin: 0;
-	}
-    </style>
-  </head>
-  <body>
-    <canvas id="myCanvas" style="border: 1px solid black;"></canvas>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<title>Abstand darstellen</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.20/fabric.js"></script>
+	<style id="compiled-css" type="text/css">
+		.controls {
+			float: both;
+			position: absolute;
+			border: 1px solid blue;
+			padding: 5px;
+		}
+
+		.controls p {
+			padding: 0;
+			margin: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="myCanvas" style="border: 1px solid black;"></canvas>
 	<div id="controls" class="controls">
 		<p>
-			<label><span>Abstand:</span> <input type="range" id="dist_car-control" value="0.1" min="-0.5" max="3" step="0.05">&nbsp;(<span id="dist_car-lbl"></span>)</label>
+			<label><span>Abstand:</span> <input type="range" id="distance_car-control" value="0.1" min="-0.5" max="3"
+					step="0.05">&nbsp;(<span id="distance_car-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><span>KFZ Breite:</span> <input type="range" id="car-control" value="2" min="0.6" max="3.0" step="0.05">&nbsp;(<span id="car-lbl"></span>)</label>
+			<label><span>KFZ Breite:</span> <input type="range" id="car-control" value="2" min="0.6" max="3.0"
+					step="0.05">&nbsp;(<span id="car-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><span>Fahrbahnbreite:</span> <input type="range" id="right_lane-control" value="12" min="0.6" max="15" step="0.1">&nbsp;(<span id="right_lane-lbl"></span>)</label>
+			<label><span>Fahrbahnbreite:</span> <input type="range" id="lane-control" value="12" min="0.6" max="15"
+					step="0.1">&nbsp;(<span id="lane-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><span>Straßenbreite:</span> <input type="range" id="street-control" value="1.5" min="1.5" max="20" step="0.1">&nbsp;(<span id="street-lbl"></span>)</label>
+			<label><span>Straßenbreite:</span> <input type="range" id="street-control" value="1.5" min="1.5" max="20"
+					step="0.1">&nbsp;(<span id="street-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><span>Radfahrer Breite:</span> <input type="range" id="cyclist-control" value="0.8" min="0.5" max="2.8" step="0.01">&nbsp;(<span id="cyclist-lbl"></span>)</label>
+			<label><span>Radfahrer Breite:</span> <input type="range" id="cyclist-control" value="0.8" min="0.5"
+					max="2.8" step="0.01">&nbsp;(<span id="cyclist-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><span>Abstand Fahrbahnrand:</span> <input type="range" id="dist_right-control" value="0.4" min="-1.0" max="4.0" step="0.01">&nbsp;(<span id="dist_right-lbl"></span>)</label>
+			<label><span>Abstand Fahrbahnrand:</span> <input type="range" id="distance_right-control" value="0.4"
+					min="-1.0" max="4.0" step="0.01">&nbsp;(<span id="distance_right-lbl"></span>)</label>
 		</p>
 	</div>
-	
-
-    <script type="text/javascript">//<![CDATA[
 
 
-var width_street = 7.0; // street width in m
-var width_right_lane = 3.5; // right lane in m
-var width_car = 2.0; // width of the car in m
-var width_cyclist = 0.8; // width of the cyclist in m
-var width_dist_right = 0.5; // width of the distance to the right street border in m
-var width_verge = 0.2; // width of the verge in m
-var width_marking = 0.12; // width of markings in m
-var width_border = 0.3; // width of a border in m (better visibility)
-var width_dist_car = 1.5; // width of the distance car to cyclist in m
-var height_cyclist = 1.8; // height of the cyclist in m
-var height_car = 1.5; // height of the car in m
-var height_street = 0.15; // height of the street in m
-
-var imgurl_car = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/auto_mit.png";
-var imgurl_cyclist = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/radler.png";
-
-var $ = function(id) {
-  return document.getElementById(id)
-};
+	<script type="text/javascript">//<![CDATA[
 
 
+		const default_col_car = 'rgba(100, 10, 10, 0.2)';
+		const default_col_distance_car = 'rgba(0, 10, 150, 0.2)';
+		const default_col_street = 'rgba(10, 10, 10, 0.9)';
+		const default_col_verge = 'rgba(50, 50, 50, 0.9)';
+		const default_col_cyclist = 'rgba(10, 100, 10, 0.2)';
+		const default_col_marking = 'rgba(250, 250, 250, 0.9)';
+		const col_lane = 'rgba(200, 200, 200, 0.9)';
+		const col_both_lanes = 'rgba(200, 200, 200, 0.9)';
 
-const col_both_lanes = 'rgba(100, 100, 100, 0.2)';
-const col_car = 'rgba(100, 10, 10, 0.2)';
-const col_distance = 'rgba(0, 10, 150, 0.2)';
-const col_street = 'rgba(10, 10, 10, 0.9)';
-const col_cyclist = 'rgba(10, 100, 10, 0.2)';
-const col_marking = 'rgba(250, 250, 250, 0.9)';
-const col_lane = 'rgba(200, 200, 200, 0.9)';
-
-var rect_street = new fabric.Rect({
-  fill: col_street,
-  selectable: false
-});
-var rect_street_marking_left = new fabric.Rect({
-  fill: col_marking,
-  selectable: false
-});
-var rect_street_marking_right = new fabric.Rect({
-  fill: col_marking,
-  selectable: false
-});
-var rect_street_marking_center = new fabric.Rect({
-  fill: col_marking,
-  selectable: false,
-  resizable: false
-});
-var line_car_left = new fabric.Rect({
-  width: 1,
-  fill: col_car,
-  selectable: false,
-  resizable: false
-});
-var line_car_right = new fabric.Rect({
-  width: 1,
-  fill: col_car,
-  selectable: true,
-  resizable: false
-});
-var rect_car = new fabric.Rect({
-  fill: col_car,
-  selectable: false,
-  resizable: false
-});
-var rect_cyclist = new fabric.Rect({
-  fill: col_cyclist,
-  selectable: false,
-  resizable: false
-});
-var line_cyclist_right = new fabric.Rect({
-  width: 1,
-  fill: col_cyclist,
-  selectable: false,
-  resizable: false
-});
-var line_cyclist_left = new fabric.Rect({
-  width: 1,
-  fill: col_cyclist,
-  selectable: false,
-  resizable: false
-});
-var textbg_car = new fabric.Rect({
-	fill: col_car,
-	selectable: false
-});
-var textbg_cyclist = new fabric.Rect({
-	fill: col_cyclist,
-	selectable: false
-});
-var textbg_dist_car = new fabric.Rect({
-	fill: col_distance,
-	selectable: false
-});
-var textbg_both_lanes = new fabric.Rect({
-	fill: col_both_lanes,
-	selectable: false
-});
-var textbg_right_lane = new fabric.Rect({
-	fill: col_lane,
-	selectable: false
-});
-
-var text_car = new fabric.Text("car", { fontSize: 12, selectable: false});
-var text_dist_car = new fabric.Text("distcar", { fontSize: 12, selectable: false});
-var text_cyclist = new fabric.Text("cyclist", { fontSize: 12, selectable: false});
-var text_right_lane = new fabric.Text("right_lane", { fontSize: 12, selectable: false});
-var text_both_lanes = new fabric.Text("both_lanes", { fontSize: 12, selectable: false});
-
-var img_cyclist = null;
-fabric.Image.fromURL(imgurl_cyclist, function(myImg) {
-	canvas.add(myImg); 
-	img_cyclist = myImg;
-	myImg.selectable = false;
-});
-var img_car = null;
-fabric.Image.fromURL(imgurl_car, function(myImg) {
-	canvas.add(myImg); 
-	img_car = myImg;
-	myImg.selectable = false;
-});
+		const default_imgurl_car = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/auto_mit.png";
+		const default_imgurl_cyclist = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/radler.png";
 
 
-function setRectDims(rect, m_top, m_left, m_width, m_height) {
-  rect.top = cP(m_top);
-  rect.left = cP(m_left);
-  if (m_width)
-    rect.width = cP(m_width);
-  if (m_height)
-    rect.height = cP(m_height);
-	  rect.set('dirty', true);
-}
+		// default widths/heigths (in m)
+		const default_width_street = 7.0;
+		const default_witdh_marking = 0.12;
+		const default_width_border = 0.15;
+		const default_height_street = 0.15;
+		const default_distance_right = 0.5;
+		const default_width_cyclist = 0.8;
+		const default_height_cyclist = 1.8;
+		const default_distance_car = 1.5;
+		const default_width_car = 2.0;
+		const default_height_car = 1.5;
+		const default_width_verge = 0.2;
+		const default_width_lane = 3.5;
 
-function recalcScene(canvas) {
-	
+		var objectdefs = {
+			'street': {
+				'width': default_width_street,
+				'height': -0.15, // positive values: above street level, negative values below street level
+				'rect_color': default_col_street, // color, null means: not rendered
+				'text_bgcolor': default_col_street, // color, null means: not rendered
+				'text_fgcolor': null, // color, null means: not rendered
+				'below_level': 3, // 0 == is on street level, -1 above street level, +x x street heights below street level
+				'image': null,  // optional image url, if null, no image is rendered.
+				'inputRangeName': 'street'
+			},
+			'lane': {
+				'width': default_width_lane,
+				'height': 0,
+				'rect_color': null,
+				'text_bgcolor': col_lane,
+				'text_fgcolor': null,
+				'below_level': 2,
+				'image': null,
+				'inputRangeName': 'lane'
+			},
+			'border_right': {
+				'width': default_width_border,
+				'height': -default_height_street,
+				'below_level': 0
+			},
+			'border_left': {
+				'width': default_width_border,
+				'height': -default_height_street,
+				'below_level': 0
+			},
+			'verge_left': {
+				'width': default_width_verge,
+				'height': -default_height_street * 0.1,
+				'rect_color': default_col_verge,
+				'below_level': 0,
+				'next_right': 'border_left'
+			},
+			'verge_right': {
+				'width': default_width_verge,
+				'height': -default_height_street * 0.1,
+				'rect_color': default_col_verge,
+				'below_level': 0,
+				'next_left': 'border_right'
+			},
+			'marking_left': {
+				'width': default_witdh_marking,
+				'height': -default_height_street * 0.8,
+				'rect_color': default_col_marking,
+				'below_level': 0,
+				'next_right': 'verge_left'
+			},
+			'marking_right': {
+				'width': default_witdh_marking,
+				'height': -default_height_street * 0.8,
+				'rect_color': default_col_marking,
+				'text_bgcolor': null,
+				'below_level': 0,
+				'image': null,
+				'next_obj': ['border_right', 'verge_right']
+			},
+			'marking_center': {
+				'width': default_witdh_marking,
+				'height': -default_height_street * 0.8,
+				'rect_color': default_col_marking,
+				'text_bgcolor': null,
+				'below_level': 0,
+				'image': null,
+				'next_to': 'right',
+				'next_obj': ['border_right', 'verge_right', 'marking_right', 'rightlane']
+			},
+			'distance_right': {
+				'width': default_distance_right,
+				'height': 0,
+				'rect_color': null,
+				'text_bgcolor': null,
+				'below_level': 1,
+				'image': null,
+				'next_to': 'right',
+				'next_obj': ['border_right', 'verge_right', 'marking_right'],
+				'inputRangeName': 'distance_right'
+			},
+			'cyclist': {
+				'width': default_width_cyclist,
+				'height': default_height_cyclist,
+				'rect_color': default_col_cyclist,
+				'text_bgcolor': default_col_cyclist,
+				'line_color': default_col_cyclist,
+				'below_level': 1,
+				'image': default_imgurl_cyclist,
+				'next_to': 'right',
+				'next_obj': ['border_right', 'verge_right', 'marking_right', 'distance_right'],
+				'inputRangeName': 'cyclist'
+			},
+			'distance_car': {
+				'width': default_distance_car,
+				'height': 0,
+				'rect_color': null,
+				'text_bgcolor': default_col_distance_car,
+				'below_level': 1,
+				'image': null,
+				'next_to': 'right',
+				'next_obj': ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist'],
+				'inputRangeName': 'distance_car'
+			},
+			'car': {
+				'width': default_width_car,
+				'height': default_height_car,
+				'rect_color': default_col_car,
+				'text_bgcolor': default_col_car,
+				'line_color': default_col_car,
+				'below_level': 1,
+				'image': default_imgurl_car,
+				'next_to': 'right',
+				'next_obj': ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist', 'distance_car'],
+				'inputRangeName': 'car'
+			}
+		};
 
-  width_dist_car = parseFloat($('dist_car-control').value);
-  width_car = parseFloat($('car-control').value);
-  width_right_lane = parseFloat($('right_lane-control').value);
-  width_both_lanes = parseFloat($('street-control').value);
-  // width_street = parseFloat($('street-control').value);
-  width_dist_right = parseFloat($('dist_right-control').value);
-  width_cyclist = parseFloat($('cyclist-control').value);
-  
-  width_street = 2* width_verge + 2*width_marking+ width_both_lanes;
-  if (img_car) {
-	height_car = img_car.height/img_car.width*width_car;
-  }
-  if (img_cyclist) {
-	height_cyclist = img_cyclist.height/img_cyclist.width*width_cyclist;
-  }
-  
-  $('dist_car-lbl').textContent = width_dist_car + " m";
-  $('car-lbl').textContent = width_car + " m";
-  $('right_lane-lbl').textContent = width_right_lane + " m";
-  $('street-lbl').textContent = width_both_lanes + " m";
-  $('dist_right-lbl').textContent = width_dist_right + " m";
-  $('cyclist-lbl').textContent = width_cyclist + " m";
-  
-  const height_max = Math.max(height_car, height_cyclist);
-  var m_street_r = width_border + 2* width_verge + 2* width_marking + width_both_lanes;
-  var m_marking_r = m_street_r - width_verge;
-  var m_marking_l = m_marking_r - width_marking;
-  var m_cyclist_r = m_marking_r - width_dist_right;
-  var m_cyclist_l = m_cyclist_r - width_cyclist;
-  var m_car_r = m_cyclist_l - width_dist_car;
-  var m_car_l = m_car_r - width_car;
+		var wobj_full = ['border_left', 'verge_left', 'marking_left' ,'street', 'marking_right', 'verge_right', 'border_right'];
+		var renderorder_streetlevel_left = ['border_left', 'verge_left', 'marking_left', 'street']
+		var renderorder_streetlevel_right = ['border_right', 'verge_right', 'marking_right', 'lane', 'marking_center'];
 
-  setRectDims(rect_street,
-    height_max,
-    width_border,
-    width_street,
-    height_street);
-  setRectDims(rect_street_marking_center,
-    height_max - height_street * 0.2,
-    m_marking_l - width_right_lane - width_marking,
-    width_marking,
-    height_street);
-  setRectDims(rect_street_marking_right,
-    height_max - height_street * 0.2,
-    m_marking_l,
-    width_marking,
-    height_street);
-  setRectDims(rect_street_marking_left,
-    height_max - height_street * 0.2,
-    width_border + width_verge,
-    width_marking,
-    height_street);
-  setRectDims(line_car_left,
-    height_max - height_car,
-    m_car_l,
-    null,
-    height_car + 2 * height_street);
-  setRectDims(line_car_right,
-    height_max - height_car,
-    m_car_r,
-    null,
-    height_car + 2 * height_street);
-  setRectDims(rect_car,
-    height_max - height_car,
-    m_car_l,
-    width_car,
-    height_car);
-	
-	if (img_car) {
-		img_car.left = cP(m_car_l);
-		img_car.top = cP(height_max - height_car);
-		img_car.scaleX = cP(width_car) / img_car.width;
-		img_car.scaleY = cP(height_car) / img_car.height;
-	}
-	if (img_cyclist) {
-		img_cyclist.left = cP(m_cyclist_l);
-		img_cyclist.top = cP(height_max - height_cyclist);
-		img_cyclist.scaleX = cP(width_cyclist) / img_cyclist.width;
-		img_cyclist.scaleY = cP(height_cyclist) / img_cyclist.height;
-	}
-  setRectDims(rect_cyclist,
-    height_max - height_cyclist,
-    m_cyclist_l,
-    width_cyclist,
-    height_cyclist);
-  setRectDims(line_cyclist_left,
-    height_max - height_cyclist,
-    m_cyclist_l,
-    null,
-    height_cyclist + 2 * height_street);
-  setRectDims(line_cyclist_right,
-    height_max - height_cyclist,
-    m_cyclist_r,
-    null,
-    height_cyclist + 2 * height_street);
+		function initRect(currObj, colorFieldName, rectFieldName) {
+			if (currObj[colorFieldName]) {
+				currObj[rectFieldName] = new fabric.Rect({
+					fill: currObj[colorFieldName],
+					selectable: false,
+					resizable: false
+				});
+			}
+		}
 
-	text_car.text = width_car+ " m";
-	text_car.top = cP(height_max + 2*height_street);
-	text_car.left = cP((m_car_l + m_car_r)/2) - text_car.width/2;
-	setRectDims(textbg_car, 
-		height_max + 2*height_street,
-		m_car_l,
-		width_car, height_street);
-	
-	text_dist_car.text = width_dist_car+ " m";
-	text_dist_car.top = cP(height_max + 2*height_street);
-	text_dist_car.left = cP((m_car_r + m_cyclist_l)/2) - text_dist_car.width/2;
-	setRectDims(textbg_dist_car, 
-		height_max + 2*height_street,
-		m_car_r,
-		width_dist_car, height_street);
-
-	text_cyclist.text = width_cyclist + " m";
-	text_cyclist.top = cP(height_max + 2*height_street);
-	text_cyclist.left = cP((m_cyclist_l + m_cyclist_r)/2) - text_cyclist.width/2;
-	setRectDims(textbg_cyclist, 
-		height_max + 2*height_street,
-		m_cyclist_l,
-		width_cyclist, height_street);
-
-	text_both_lanes.text = width_both_lanes + " m";
-	text_both_lanes.top = cP(height_max + 4*height_street);
-	text_both_lanes.left = cP(width_border + width_marking + (width_street/2)) - text_both_lanes.width/2;
-	setRectDims(textbg_both_lanes, 
-		height_max + 4*height_street,
-		width_border + width_verge + width_marking,
-		width_both_lanes, height_street);
-
-	text_right_lane.text = width_right_lane + " m";
-	text_right_lane.top = cP(height_max + 3*height_street);
-	text_right_lane.left = cP(m_marking_l - width_right_lane/2) - text_right_lane.width/2;
-	setRectDims(textbg_right_lane, 
-		height_max + 3*height_street,
-		m_marking_l - width_right_lane,
-		width_right_lane, height_street);
-
-
-
-	canvas.renderAll();
-}
-var canvas;
-(function() {
-
-	var cnvs = $('myCanvas');
-	cnvs.width = window.innerWidth - 30;
-	cnvs.height = window.innerHeight - 30;
-	cnvs.top = 15;
-	cnvs.left = 15;
-
-    var controls = $('controls'); 
-	controls.style.left = '15px'; 
-	controls.style.top = (cnvs.height - controls.offsetHeight) + 'px';
-
-	canvas = this.__canvas = new fabric.Canvas('myCanvas');
-	fabric.Object.prototype.transparentCorners = false;
+		// build rects
+		Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
+			var currObj = objectdefs[currObjName];
+			initRect(currObj, 'rect_color', 'rect_top');
+			initRect(currObj, 'text_bgcolor', 'rect_text');
+			initRect(currObj, 'line_color', 'line_left');
+			initRect(currObj, 'line_color', 'line_right');
+		});
 
 
-	canvas.add(rect_cyclist);
-	canvas.add(rect_street);
-	canvas.add(rect_street_marking_left);
-	canvas.add(rect_street_marking_right);
-	canvas.add(rect_street_marking_center);
-	canvas.add(line_car_left);
-	canvas.add(line_car_right);
-	canvas.add(rect_car);
-    canvas.add(textbg_car);
-    canvas.add(text_car);
-    canvas.add(textbg_dist_car);
-    canvas.add(text_dist_car);
-    canvas.add(textbg_cyclist);
-    canvas.add(text_cyclist);
-	canvas.add(textbg_right_lane);
-    canvas.add(text_right_lane);
-	canvas.add(textbg_both_lanes);
-    canvas.add(text_both_lanes);
-	canvas.add(line_cyclist_left);
-	canvas.add(line_cyclist_right);
+		function calcWidthSum(objectdefs, objectNames) {
+			var res = 0;
+			objectNames.forEach(function (currObj) {
+				res += objectdefs[currObj]['width'];
+				console.log("curr: " + currObj + " --> " + res);
+			});
+			return res;
+		}
 
-	var cyclistControl = $('cyclist-control');
-	var distCarControl = $('dist_car-control');
-	var carControl = $('car-control');
-	var rightLaneControl = $('right_lane-control');
-	var streetControl = $('street-control');
-	var distRightControl = $('dist_right-control');
+		var width_street = objectdefs['street'].width; // street width in m
+		var width_right_lane = objectdefs['lane'].width; // right lane in m
+		var width_car = objectdefs['car'].width; // width of the car in m
+		var width_cyclist = objectdefs['cyclist'].width; // width of the cyclist in m
+		var width_distance_right = default_distance_right; // width of the distance to the right street border in m
+		var width_verge = default_width_verge; // width of the verge in m
+		var width_marking = default_witdh_marking; // width of markings in m
+		var width_border = default_width_border; // width of a border in m (better visibility)
+		var width_distance_car = default_distance_car; // width of the distance car to cyclist in m
+		var height_cyclist = default_height_cyclist; // height of the cyclist in m
+		var height_car = default_height_car; // height of the car in m
+		var height_street = default_height_street; // height of the street in m
 
-	cyclistControl.oninput = function() {
-		recalcScene(canvas);
-	};
-	distCarControl.oninput = function() {
-		recalcScene(canvas);
-	};
-	carControl.oninput = function() {
-		recalcScene(canvas);
-	};
-	rightLaneControl.oninput = function() {
-		recalcScene(canvas);
-	};
-	streetControl.oninput = function() {
-		recalcScene(canvas);
-	};
-	distRightControl.oninput = function() {
-		recalcScene(canvas);
-	};
 
-	cyclistControl.value = width_cyclist;
-	carControl.value = width_car;
-	rightLaneControl.value = width_right_lane;
-	streetControl.value = width_street;
-	distCarControl.value = width_dist_car;
-	distRightControl.value = width_dist_right;
+		var $ = function (id) {
+			return document.getElementById(id)
+		};
 
-	recalcScene(canvas);	
-})();
+		var rect_street = objectdefs['street']['rect_top'];
+		var rect_street_marking_left = objectdefs['marking_left']['rect_top'];
+		var rect_street_marking_right = objectdefs['marking_right']['rect_top'];
+		var rect_street_marking_center = objectdefs['marking_center']['rect_top'];
+		var line_car_left = objectdefs['car']['line_left'];
+		var line_car_right = objectdefs['car']['line_right'];
+		var rect_car = objectdefs['car']['rect_top'];
+		var rect_cyclist = objectdefs['cyclist']['rect_top'];
+		var line_cyclist_right = objectdefs['cyclist']['line_right'];
+		var line_cyclist_left = objectdefs['cyclist']['line_left'];
 
-function cP(meters) {
-	var canvas = $("myCanvas");
-	var fullwidth_m = width_border * 2 + width_street;
-	var m_per_pixel = canvas.width / fullwidth_m;
-	return Math.round(meters * m_per_pixel);
-}
+		var textbg_car = objectdefs['car']['rect_text'];
+		var textbg_cyclist = objectdefs['cyclist']['rect_text'];
+		var textbg_distance_car = objectdefs['distance_car']['rect_text'];
+		var textbg_street = objectdefs['street']['rect_text'];
+		var textbg_lane = objectdefs['lane']['rect_text'];
+
+		var text_car = new fabric.Text("car", { fontSize: 12, selectable: false });
+		var text_distance_car = new fabric.Text("distcar", { fontSize: 12, selectable: false });
+		var text_cyclist = new fabric.Text("cyclist", { fontSize: 12, selectable: false });
+		var text_right_lane = new fabric.Text("right_lane", { fontSize: 12, selectable: false });
+		var text_both_lanes = new fabric.Text("both_lanes", { fontSize: 12, selectable: false });
+
+		var img_cyclist = null;
+		fabric.Image.fromURL(default_imgurl_cyclist, function (myImg) {
+			canvas.add(myImg);
+			img_cyclist = myImg;
+			myImg.selectable = false;
+		});
+		var img_car = null;
+		fabric.Image.fromURL(default_imgurl_car, function (myImg) {
+			canvas.add(myImg);
+			img_car = myImg;
+			myImg.selectable = false;
+		});
+
+
+		function setRectDims(rect, m_top, m_left, m_width, m_height) {
+			rect.top = cP(m_top);
+			rect.left = cP(m_left);
+			if (m_width)
+				rect.width = cP(m_width);
+			if (m_height)
+				rect.height = cP(m_height);
+			rect.set('dirty', true);
+		}
+
+		function recalcScene(canvas) {
+			Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
+				var currObj = objectdefs[currObjName];
+				if (currObj) {
+					var inputRangeName = currObj['inputRangeName'];
+					if (inputRangeName) {
+						var inputRangeVal = parseFloat($(inputRangeName + '-control').value);
+						if (inputRangeVal) {
+							currObj['width'] = inputRangeVal;
+						}
+						$(inputRangeName + '-lbl').textContent = currObj['width'] + " m";
+					}
+				}
+			});
+
+			renderorder_streetlevel_left.forEach(function() {
+
+			});
+
+
+			width_distance_car = objectdefs['distance_car'].width;
+			width_car = objectdefs['car'].width;
+			width_right_lane = objectdefs['lane'].width;
+			width_both_lanes = objectdefs['street'].width;
+			width_distance_right = objectdefs['distance_right'].width;
+			width_cyclist = objectdefs['cyclist'].width;
+
+			width_street = 2 * width_verge + 2 * width_marking + width_both_lanes;
+			if (img_car) {
+				height_car = img_car.height / img_car.width * width_car;
+			}
+			if (img_cyclist) {
+				height_cyclist = img_cyclist.height / img_cyclist.width * width_cyclist;
+			}
+
+			const height_max = Math.max(height_car, height_cyclist);
+			var m_street_r = width_border + 2 * width_verge + 2 * width_marking + width_both_lanes;
+			var m_marking_r = m_street_r - width_verge;
+			var m_marking_l = m_marking_r - width_marking;
+			var m_cyclist_r = m_marking_r - width_distance_right;
+			var m_cyclist_l = m_cyclist_r - width_cyclist;
+			var m_car_r = m_cyclist_l - width_distance_car;
+			var m_car_l = m_car_r - width_car;
+
+			setRectDims(rect_street,
+				height_max,
+				width_border,
+				width_street,
+				height_street);
+			setRectDims(rect_street_marking_center,
+				height_max - height_street * 0.2,
+				m_marking_l - width_right_lane - width_marking,
+				width_marking,
+				height_street);
+			setRectDims(rect_street_marking_right,
+				height_max - height_street * 0.2,
+				m_marking_l,
+				width_marking,
+				height_street);
+			setRectDims(rect_street_marking_left,
+				height_max - height_street * 0.2,
+				width_border + width_verge,
+				width_marking,
+				height_street);
+			setRectDims(line_car_left,
+				height_max - height_car,
+				m_car_l,
+				null,
+				height_car + 2 * height_street);
+			setRectDims(line_car_right,
+				height_max - height_car,
+				m_car_r,
+				null,
+				height_car + 2 * height_street);
+			setRectDims(rect_car,
+				height_max - height_car,
+				m_car_l,
+				width_car,
+				height_car);
+
+			if (img_car) {
+				img_car.left = cP(m_car_l);
+				img_car.top = cP(height_max - height_car);
+				img_car.scaleX = cP(width_car) / img_car.width;
+				img_car.scaleY = cP(height_car) / img_car.height;
+			}
+			if (img_cyclist) {
+				img_cyclist.left = cP(m_cyclist_l);
+				img_cyclist.top = cP(height_max - height_cyclist);
+				img_cyclist.scaleX = cP(width_cyclist) / img_cyclist.width;
+				img_cyclist.scaleY = cP(height_cyclist) / img_cyclist.height;
+			}
+			setRectDims(rect_cyclist,
+				height_max - height_cyclist,
+				m_cyclist_l,
+				width_cyclist,
+				height_cyclist);
+			setRectDims(line_cyclist_left,
+				height_max - height_cyclist,
+				m_cyclist_l,
+				null,
+				height_cyclist + 2 * height_street);
+			setRectDims(line_cyclist_right,
+				height_max - height_cyclist,
+				m_cyclist_r,
+				null,
+				height_cyclist + 2 * height_street);
+
+			text_car.text = width_car + " m";
+			text_car.top = cP(height_max + 2 * height_street);
+			text_car.left = cP((m_car_l + m_car_r) / 2) - text_car.width / 2;
+			setRectDims(textbg_car,
+				height_max + 2 * height_street,
+				m_car_l,
+				width_car, height_street);
+
+			text_distance_car.text = width_distance_car + " m";
+			text_distance_car.top = cP(height_max + 2 * height_street);
+			text_distance_car.left = cP((m_car_r + m_cyclist_l) / 2) - text_distance_car.width / 2;
+			setRectDims(textbg_distance_car,
+				height_max + 2 * height_street,
+				m_car_r,
+				width_distance_car, height_street);
+
+			text_cyclist.text = width_cyclist + " m";
+			text_cyclist.top = cP(height_max + 2 * height_street);
+			text_cyclist.left = cP((m_cyclist_l + m_cyclist_r) / 2) - text_cyclist.width / 2;
+			setRectDims(textbg_cyclist,
+				height_max + 2 * height_street,
+				m_cyclist_l,
+				width_cyclist, height_street);
+
+			text_both_lanes.text = width_both_lanes + " m";
+			text_both_lanes.top = cP(height_max + 4 * height_street);
+			text_both_lanes.left = cP(width_border + width_marking + (width_street / 2)) - text_both_lanes.width / 2;
+			setRectDims(textbg_street,
+				height_max + 4 * height_street,
+				width_border + width_verge + width_marking,
+				width_both_lanes, height_street);
+
+			text_right_lane.text = width_right_lane + " m";
+			text_right_lane.top = cP(height_max + 3 * height_street);
+			text_right_lane.left = cP(m_marking_l - width_right_lane / 2) - text_right_lane.width / 2;
+			setRectDims(textbg_lane,
+				height_max + 3 * height_street,
+				m_marking_l - width_right_lane,
+				width_right_lane, height_street);
+
+
+
+			canvas.renderAll();
+		}
+
+		function addCanvas(canvas, graphicElement) {
+			if (graphicElement) {
+				canvas.add(graphicElement);
+			}
+		}
+		var canvas;
+		(function () {
+
+			var cnvs = $('myCanvas');
+			cnvs.width = window.innerWidth - 30;
+			cnvs.height = window.innerHeight - 30;
+			cnvs.top = 15;
+			cnvs.left = 15;
+
+			var controls = $('controls');
+			controls.style.left = '15px';
+			controls.style.top = (cnvs.height - controls.offsetHeight) + 'px';
+
+			canvas = this.__canvas = new fabric.Canvas('myCanvas');
+			fabric.Object.prototype.transparentCorners = false;
+
+			Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
+				var currObj = objectdefs[currObjName];
+				addCanvas(canvas, currObj['rect_top']);
+				addCanvas(canvas, currObj['rect_text']);
+				addCanvas(canvas, currObj['line_left']);
+				addCanvas(canvas, currObj['line_right']);
+				if (currObj['inputRangeName']) {
+					var currRangeControl = $(currObj['inputRangeName'] + '-control');
+					currRangeControl.oninput = function () {
+						recalcScene(canvas);
+					};
+					currRangeControl.value = currObj['width'];
+				}
+			});
+
+			recalcScene(canvas);
+		})();
+
+		function cP(meters) {
+			var canvas = $("myCanvas");
+			var fullwidth_m = calcWidthSum(objectdefs, wobj_full);
+			var m_per_pixel = canvas.width / fullwidth_m;
+			return Math.round(meters * m_per_pixel);
+		}
 
 
 
   //]]></script>
 
-	</body>
+</body>
+
 </html>
-  
