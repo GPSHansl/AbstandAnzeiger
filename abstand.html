@@ -115,51 +115,36 @@
 				'width': default_width_verge,
 				'height': -default_height_street * 0.1,
 				'rect_color': default_col_verge,
-				'below_level': 0,
-				'next_right': 'border_left'
+				'below_level': 0
 			},
 			'verge_right': {
 				'width': default_width_verge,
 				'height': -default_height_street * 0.1,
 				'rect_color': default_col_verge,
-				'below_level': 0,
-				'next_left': 'border_right'
+				'below_level': 0
 			},
 			'marking_left': {
 				'width': default_witdh_marking,
 				'height': -default_height_street * 0.8,
 				'rect_color': default_col_marking,
-				'below_level': 0,
-				'next_right': 'verge_left'
+				'below_level': 0
 			},
 			'marking_right': {
 				'width': default_witdh_marking,
 				'height': -default_height_street * 0.8,
 				'rect_color': default_col_marking,
-				'text_bgcolor': null,
-				'below_level': 0,
-				'image': null,
-				'next_obj': ['border_right', 'verge_right']
+				'below_level': 0
 			},
 			'marking_center': {
 				'width': default_witdh_marking,
 				'height': -default_height_street * 0.8,
 				'rect_color': default_col_marking,
-				'text_bgcolor': null,
-				'below_level': 0,
-				'image': null,
-				'next_to': 'right',
-				'next_obj': ['border_right', 'verge_right', 'marking_right', 'rightlane']
+				'below_level': 0
 			},
 			'distance_right': {
 				'width': default_distance_right,
 				'height': 0,
-				'rect_color': null,
-				'text_bgcolor': null,
 				'below_level': 1,
-				'image': null,
-				'next_to': 'right',
-				'next_obj': ['border_right', 'verge_right', 'marking_right'],
 				'inputRangeName': 'distance_right'
 			},
 			'cyclist': {
@@ -170,19 +155,13 @@
 				'line_color': default_col_cyclist,
 				'below_level': 1,
 				'image': default_imgurl_cyclist,
-				'next_to': 'right',
-				'next_obj': ['border_right', 'verge_right', 'marking_right', 'distance_right'],
 				'inputRangeName': 'cyclist'
 			},
 			'distance_car': {
 				'width': default_distance_car,
 				'height': 0,
-				'rect_color': null,
 				'text_bgcolor': default_col_distance_car,
 				'below_level': 1,
-				'image': null,
-				'next_to': 'right',
-				'next_obj': ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist'],
 				'inputRangeName': 'distance_car'
 			},
 			'car': {
@@ -193,15 +172,14 @@
 				'line_color': default_col_car,
 				'below_level': 1,
 				'image': default_imgurl_car,
-				'next_to': 'right',
-				'next_obj': ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist', 'distance_car'],
 				'inputRangeName': 'car'
 			}
 		};
 
-		var wobj_full = ['border_left', 'verge_left', 'marking_left' ,'street', 'marking_right', 'verge_right', 'border_right'];
-		var renderorder_streetlevel_left = ['border_left', 'verge_left', 'marking_left', 'street']
+		var wobj_full = ['border_left', 'verge_left', 'marking_left', 'street', 'marking_right', 'verge_right', 'border_right'];
+		var renderorder_streetlevel_left = ['border_left', 'verge_left', 'marking_left', 'street'];
 		var renderorder_streetlevel_right = ['border_right', 'verge_right', 'marking_right', 'lane', 'marking_center'];
+		var renderorder_abovestreetlevel_right = ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist', 'distance_car', 'car'];
 
 		function initRect(currObj, colorFieldName, rectFieldName) {
 			if (currObj[colorFieldName]) {
@@ -227,13 +205,10 @@
 			var res = 0;
 			objectNames.forEach(function (currObj) {
 				res += objectdefs[currObj]['width'];
-				console.log("curr: " + currObj + " --> " + res);
 			});
 			return res;
 		}
 
-		var width_street = objectdefs['street'].width; // street width in m
-		var width_right_lane = objectdefs['lane'].width; // right lane in m
 		var width_car = objectdefs['car'].width; // width of the car in m
 		var width_cyclist = objectdefs['cyclist'].width; // width of the cyclist in m
 		var width_distance_right = default_distance_right; // width of the distance to the right street border in m
@@ -250,16 +225,7 @@
 			return document.getElementById(id)
 		};
 
-		var rect_street = objectdefs['street']['rect_top'];
-		var rect_street_marking_left = objectdefs['marking_left']['rect_top'];
-		var rect_street_marking_right = objectdefs['marking_right']['rect_top'];
 		var rect_street_marking_center = objectdefs['marking_center']['rect_top'];
-		var line_car_left = objectdefs['car']['line_left'];
-		var line_car_right = objectdefs['car']['line_right'];
-		var rect_car = objectdefs['car']['rect_top'];
-		var rect_cyclist = objectdefs['cyclist']['rect_top'];
-		var line_cyclist_right = objectdefs['cyclist']['line_right'];
-		var line_cyclist_left = objectdefs['cyclist']['line_left'];
 
 		var textbg_car = objectdefs['car']['rect_text'];
 		var textbg_cyclist = objectdefs['cyclist']['rect_text'];
@@ -288,16 +254,19 @@
 
 
 		function setRectDims(rect, m_top, m_left, m_width, m_height) {
-			rect.top = cP(m_top);
-			rect.left = cP(m_left);
-			if (m_width)
-				rect.width = cP(m_width);
-			if (m_height)
-				rect.height = cP(m_height);
-			rect.set('dirty', true);
+			if (rect) {
+				rect.top = cP(m_top);
+				rect.left = cP(m_left);
+				if (m_width)
+					rect.width = cP(m_width);
+				if (m_height)
+					rect.height = cP(m_height);
+				rect.set('dirty', true);
+			}
 		}
 
 		function recalcScene(canvas) {
+			var maxHeight = 0;
 			Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
 				var currObj = objectdefs[currObjName];
 				if (currObj) {
@@ -309,145 +278,44 @@
 						}
 						$(inputRangeName + '-lbl').textContent = currObj['width'] + " m";
 					}
+					if (currObj.height) {
+						maxHeight = Math.max(maxHeight, currObj.height);
+					}
 				}
 			});
+			console.log("maxheight: " + maxHeight);
 
-			renderorder_streetlevel_left.forEach(function() {
-
+			var currPosLeft = 0;
+			renderorder_streetlevel_left.forEach(function (currObjName) {
+				var currObj = objectdefs[currObjName];
+				if (currObj) {
+					updateAllBounds(currObj, maxHeight, currPosLeft);
+					currPosLeft += currObj.width;
+				} else
+					console.log("illegal objectname: " + currObjName);
 			});
 
-
-			width_distance_car = objectdefs['distance_car'].width;
-			width_car = objectdefs['car'].width;
-			width_right_lane = objectdefs['lane'].width;
-			width_both_lanes = objectdefs['street'].width;
-			width_distance_right = objectdefs['distance_right'].width;
-			width_cyclist = objectdefs['cyclist'].width;
-
-			width_street = 2 * width_verge + 2 * width_marking + width_both_lanes;
-			if (img_car) {
-				height_car = img_car.height / img_car.width * width_car;
-			}
-			if (img_cyclist) {
-				height_cyclist = img_cyclist.height / img_cyclist.width * width_cyclist;
-			}
-
-			const height_max = Math.max(height_car, height_cyclist);
-			var m_street_r = width_border + 2 * width_verge + 2 * width_marking + width_both_lanes;
-			var m_marking_r = m_street_r - width_verge;
-			var m_marking_l = m_marking_r - width_marking;
-			var m_cyclist_r = m_marking_r - width_distance_right;
-			var m_cyclist_l = m_cyclist_r - width_cyclist;
-			var m_car_r = m_cyclist_l - width_distance_car;
-			var m_car_l = m_car_r - width_car;
-
-			setRectDims(rect_street,
-				height_max,
-				width_border,
-				width_street,
-				height_street);
-			setRectDims(rect_street_marking_center,
-				height_max - height_street * 0.2,
-				m_marking_l - width_right_lane - width_marking,
-				width_marking,
-				height_street);
-			setRectDims(rect_street_marking_right,
-				height_max - height_street * 0.2,
-				m_marking_l,
-				width_marking,
-				height_street);
-			setRectDims(rect_street_marking_left,
-				height_max - height_street * 0.2,
-				width_border + width_verge,
-				width_marking,
-				height_street);
-			setRectDims(line_car_left,
-				height_max - height_car,
-				m_car_l,
-				null,
-				height_car + 2 * height_street);
-			setRectDims(line_car_right,
-				height_max - height_car,
-				m_car_r,
-				null,
-				height_car + 2 * height_street);
-			setRectDims(rect_car,
-				height_max - height_car,
-				m_car_l,
-				width_car,
-				height_car);
-
-			if (img_car) {
-				img_car.left = cP(m_car_l);
-				img_car.top = cP(height_max - height_car);
-				img_car.scaleX = cP(width_car) / img_car.width;
-				img_car.scaleY = cP(height_car) / img_car.height;
-			}
-			if (img_cyclist) {
-				img_cyclist.left = cP(m_cyclist_l);
-				img_cyclist.top = cP(height_max - height_cyclist);
-				img_cyclist.scaleX = cP(width_cyclist) / img_cyclist.width;
-				img_cyclist.scaleY = cP(height_cyclist) / img_cyclist.height;
-			}
-			setRectDims(rect_cyclist,
-				height_max - height_cyclist,
-				m_cyclist_l,
-				width_cyclist,
-				height_cyclist);
-			setRectDims(line_cyclist_left,
-				height_max - height_cyclist,
-				m_cyclist_l,
-				null,
-				height_cyclist + 2 * height_street);
-			setRectDims(line_cyclist_right,
-				height_max - height_cyclist,
-				m_cyclist_r,
-				null,
-				height_cyclist + 2 * height_street);
-
-			text_car.text = width_car + " m";
-			text_car.top = cP(height_max + 2 * height_street);
-			text_car.left = cP((m_car_l + m_car_r) / 2) - text_car.width / 2;
-			setRectDims(textbg_car,
-				height_max + 2 * height_street,
-				m_car_l,
-				width_car, height_street);
-
-			text_distance_car.text = width_distance_car + " m";
-			text_distance_car.top = cP(height_max + 2 * height_street);
-			text_distance_car.left = cP((m_car_r + m_cyclist_l) / 2) - text_distance_car.width / 2;
-			setRectDims(textbg_distance_car,
-				height_max + 2 * height_street,
-				m_car_r,
-				width_distance_car, height_street);
-
-			text_cyclist.text = width_cyclist + " m";
-			text_cyclist.top = cP(height_max + 2 * height_street);
-			text_cyclist.left = cP((m_cyclist_l + m_cyclist_r) / 2) - text_cyclist.width / 2;
-			setRectDims(textbg_cyclist,
-				height_max + 2 * height_street,
-				m_cyclist_l,
-				width_cyclist, height_street);
-
-			text_both_lanes.text = width_both_lanes + " m";
-			text_both_lanes.top = cP(height_max + 4 * height_street);
-			text_both_lanes.left = cP(width_border + width_marking + (width_street / 2)) - text_both_lanes.width / 2;
-			setRectDims(textbg_street,
-				height_max + 4 * height_street,
-				width_border + width_verge + width_marking,
-				width_both_lanes, height_street);
-
-			text_right_lane.text = width_right_lane + " m";
-			text_right_lane.top = cP(height_max + 3 * height_street);
-			text_right_lane.left = cP(m_marking_l - width_right_lane / 2) - text_right_lane.width / 2;
-			setRectDims(textbg_lane,
-				height_max + 3 * height_street,
-				m_marking_l - width_right_lane,
-				width_right_lane, height_street);
-
-
-
+			var currPosLeft = 0;
+			renderorder_streetlevel_right.forEach(function (currObjName) {
+				var currObj = objectdefs[currObjName];
+				if (currObj) {
+					currPosLeft -= currObj.width;
+					updateAllBounds(currObj, maxHeight, currPosLeft);
+				} else
+					console.log("illegal objectname: " + currObjName);
+			});
 			canvas.renderAll();
+		}
+
+		function updateAllBounds(currObj, maxHeight, currPosLeft) {
+			currPosRight = currPosLeft + currObj.width;
+			currPosTop = maxHeight - currObj.height;
+			currBelowLevel = currObj.below_level * 0.2;
+			setRectDims(currObj['rect_top'], currPosLeft, currPosTop, currObj.width, currObj.height);
+			setRectDims(currObj['rect_text'], currPosLeft, maxHeight + currBelowLevel, currObj.width, 0.2);
+			setRectDims(currObj['line_left'], currPosLeft, currPosTop, -1, currObj.height + currBelowLevel);
+			setRectDims(currObj['line_right'], currPosRight, currPosTop, -1, currObj.height + currBelowLevel);
+
 		}
 
 		function addCanvas(canvas, graphicElement) {
