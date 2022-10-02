@@ -51,7 +51,9 @@
 
 
 	<script type="text/javascript">//<![CDATA[
-
+		var $ = function (id) {
+			return document.getElementById(id)
+		};
 
 		const default_col_car = 'rgba(100, 10, 10, 0.2)';
 		const default_col_distance_car = 'rgba(0, 10, 150, 0.2)';
@@ -61,10 +63,6 @@
 		const default_col_marking = 'rgba(250, 250, 250, 0.9)';
 		const col_lane = 'rgba(200, 200, 200, 0.9)';
 		const col_both_lanes = 'rgba(200, 200, 200, 0.9)';
-
-		const default_imgurl_car = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/auto_mit.png";
-		const default_imgurl_cyclist = "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/radler.png";
-
 
 		// default widths/heigths (in m)
 		const default_width_street = 7.0;
@@ -81,70 +79,68 @@
 		const default_width_lane = 3.5;
 
 		var objectdefs = {
+			'default': {
+				'width': 0,
+				'height': 0, // height of the element in m
+				'rect_color': null, // color, null means: not rendered
+				'text_bgcolor': null, // color, null means: not rendered
+				'text_fgcolor': null, // color, null means: not rendered
+				'below_level': null, // 0 == is on street level, -1 above street level, +x x street heights below street level
+				'imageurl': null,  // optional image url, if null, no image is rendered.
+				'inputRangeName': null
+			},
 			'street': {
 				'width': default_width_street,
-				'height': -0.15, // positive values: above street level, negative values below street level
-				'rect_color': default_col_street, // color, null means: not rendered
-				'text_bgcolor': default_col_street, // color, null means: not rendered
-				'text_fgcolor': null, // color, null means: not rendered
-				'below_level': 3, // 0 == is on street level, -1 above street level, +x x street heights below street level
-				'image': null,  // optional image url, if null, no image is rendered.
+				'height': default_height_street,
+				'rect_color': default_col_street,
+				'text_bgcolor': default_col_marking,
+				'below_level': 4,
 				'inputRangeName': 'street'
 			},
 			'lane': {
 				'width': default_width_lane,
-				'height': 0,
-				'rect_color': null,
+				'height': default_height_street,
 				'text_bgcolor': col_lane,
-				'text_fgcolor': null,
-				'below_level': 2,
-				'image': null,
+				'below_level': 3,
 				'inputRangeName': 'lane'
 			},
 			'border_right': {
 				'width': default_width_border,
-				'height': -default_height_street,
-				'below_level': 0
+				'height': default_height_street
 			},
 			'border_left': {
 				'width': default_width_border,
-				'height': -default_height_street,
-				'below_level': 0
+				'height': default_height_street
 			},
 			'verge_left': {
 				'width': default_width_verge,
-				'height': -default_height_street * 0.1,
-				'rect_color': default_col_verge,
-				'below_level': 0
+				'height': default_height_street,
+				'rect_color': default_col_verge
 			},
 			'verge_right': {
 				'width': default_width_verge,
-				'height': -default_height_street * 0.1,
-				'rect_color': default_col_verge,
-				'below_level': 0
+				'height': default_height_street,
+				'rect_color': default_col_verge
 			},
 			'marking_left': {
 				'width': default_witdh_marking,
-				'height': -default_height_street * 0.8,
-				'rect_color': default_col_marking,
-				'below_level': 0
+				'height': default_height_street,
+				'rect_color': default_col_marking
 			},
 			'marking_right': {
 				'width': default_witdh_marking,
-				'height': -default_height_street * 0.8,
-				'rect_color': default_col_marking,
-				'below_level': 0
+				'height': default_height_street,
+				'rect_color': default_col_marking
 			},
 			'marking_center': {
 				'width': default_witdh_marking,
-				'height': -default_height_street * 0.8,
-				'rect_color': default_col_marking,
-				'below_level': 0
+				'height': default_height_street * 0.95,
+				'rect_color': default_col_marking
 			},
 			'distance_right': {
 				'width': default_distance_right,
 				'height': 0,
-				'below_level': 1,
+				'below_level': 2,
 				'inputRangeName': 'distance_right'
 			},
 			'cyclist': {
@@ -153,15 +149,16 @@
 				'rect_color': default_col_cyclist,
 				'text_bgcolor': default_col_cyclist,
 				'line_color': default_col_cyclist,
-				'below_level': 1,
-				'image': default_imgurl_cyclist,
+				'keep_aspect': true,
+				'below_level': 2,
+				'imageurl': "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/radler.png",
 				'inputRangeName': 'cyclist'
 			},
 			'distance_car': {
 				'width': default_distance_car,
 				'height': 0,
 				'text_bgcolor': default_col_distance_car,
-				'below_level': 1,
+				'below_level': 2,
 				'inputRangeName': 'distance_car'
 			},
 			'car': {
@@ -170,8 +167,9 @@
 				'rect_color': default_col_car,
 				'text_bgcolor': default_col_car,
 				'line_color': default_col_car,
-				'below_level': 1,
-				'image': default_imgurl_car,
+				'keep_aspect': true,
+				'below_level': 2,
+				'imageurl': "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/auto_mit.png",
 				'inputRangeName': 'car'
 			}
 		};
@@ -181,16 +179,6 @@
 		var renderorder_streetlevel_right = ['border_right', 'verge_right', 'marking_right', 'lane', 'marking_center'];
 		var renderorder_abovestreetlevel_right = ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist', 'distance_car', 'car'];
 
-		function initRect(currObj, colorFieldName, rectFieldName) {
-			if (currObj[colorFieldName]) {
-				currObj[rectFieldName] = new fabric.Rect({
-					fill: currObj[colorFieldName],
-					selectable: false,
-					resizable: false
-				});
-			}
-		}
-
 		// build rects
 		Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
 			var currObj = objectdefs[currObjName];
@@ -198,131 +186,93 @@
 			initRect(currObj, 'text_bgcolor', 'rect_text');
 			initRect(currObj, 'line_color', 'line_left');
 			initRect(currObj, 'line_color', 'line_right');
+			if (currObj['imageurl']) {
+				fabric.Image.fromURL(currObj['imageurl'], function (myImg) {
+					canvas.add(myImg);
+					currObj.image_obj = myImg;
+					myImg.selectable = false;
+					myImg.set('dirty', true);
+					recalcScene(canvas);
+				});
+			}
+			if (currObj['rect_text']) {
+				currObj['text_bottom'] = new fabric.Text(currObjName, { fontSize: 12, selectable: false });
+			}
 		});
 
 
-		function calcWidthSum(objectdefs, objectNames) {
-			var res = 0;
-			objectNames.forEach(function (currObj) {
-				res += objectdefs[currObj]['width'];
-			});
-			return res;
-		}
+		function recalcScene(canvas) {
+			if (canvas) {
+				Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
+					var currObj = objectdefs[currObjName];
+					if (currObj) {
+						var inputRangeName = currObj['inputRangeName'];
+						if (inputRangeName) {
+							var inputRangeVal = parseFloat($(inputRangeName + '-control').value);
+							if (inputRangeVal) {
+								if (currObj['keep_aspect']) {
+									currObj['height'] = currObj['height'] / currObj['width'] * inputRangeVal;
+								}
+								currObj['width'] = inputRangeVal;
+							}
+							$(inputRangeName + '-lbl').textContent = currObj['width'] + " m";
+						}
+					}
+				});
+				var fullwidth_m = calcWidthSum(objectdefs, wobj_full);
+				
+				updateRenders(renderorder_streetlevel_left, +1, 0);
+				updateRenders(renderorder_abovestreetlevel_right, -1, 1);
+				updateRenders(renderorder_streetlevel_right, -1, 0);
 
-		var width_car = objectdefs['car'].width; // width of the car in m
-		var width_cyclist = objectdefs['cyclist'].width; // width of the cyclist in m
-		var width_distance_right = default_distance_right; // width of the distance to the right street border in m
-		var width_verge = default_width_verge; // width of the verge in m
-		var width_marking = default_witdh_marking; // width of markings in m
-		var width_border = default_width_border; // width of a border in m (better visibility)
-		var width_distance_car = default_distance_car; // width of the distance car to cyclist in m
-		var height_cyclist = default_height_cyclist; // height of the cyclist in m
-		var height_car = default_height_car; // height of the car in m
-		var height_street = default_height_street; // height of the street in m
-
-
-		var $ = function (id) {
-			return document.getElementById(id)
-		};
-
-		var rect_street_marking_center = objectdefs['marking_center']['rect_top'];
-
-		var textbg_car = objectdefs['car']['rect_text'];
-		var textbg_cyclist = objectdefs['cyclist']['rect_text'];
-		var textbg_distance_car = objectdefs['distance_car']['rect_text'];
-		var textbg_street = objectdefs['street']['rect_text'];
-		var textbg_lane = objectdefs['lane']['rect_text'];
-
-		var text_car = new fabric.Text("car", { fontSize: 12, selectable: false });
-		var text_distance_car = new fabric.Text("distcar", { fontSize: 12, selectable: false });
-		var text_cyclist = new fabric.Text("cyclist", { fontSize: 12, selectable: false });
-		var text_right_lane = new fabric.Text("right_lane", { fontSize: 12, selectable: false });
-		var text_both_lanes = new fabric.Text("both_lanes", { fontSize: 12, selectable: false });
-
-		var img_cyclist = null;
-		fabric.Image.fromURL(default_imgurl_cyclist, function (myImg) {
-			canvas.add(myImg);
-			img_cyclist = myImg;
-			myImg.selectable = false;
-		});
-		var img_car = null;
-		fabric.Image.fromURL(default_imgurl_car, function (myImg) {
-			canvas.add(myImg);
-			img_car = myImg;
-			myImg.selectable = false;
-		});
-
-
-		function setRectDims(rect, m_top, m_left, m_width, m_height) {
-			if (rect) {
-				rect.top = cP(m_top);
-				rect.left = cP(m_left);
-				if (m_width)
-					rect.width = cP(m_width);
-				if (m_height)
-					rect.height = cP(m_height);
-				rect.set('dirty', true);
+				canvas.renderAll();
 			}
 		}
 
-		function recalcScene(canvas) {
+		function calcMaxHeight() {
 			var maxHeight = 0;
 			Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
 				var currObj = objectdefs[currObjName];
-				if (currObj) {
-					var inputRangeName = currObj['inputRangeName'];
-					if (inputRangeName) {
-						var inputRangeVal = parseFloat($(inputRangeName + '-control').value);
-						if (inputRangeVal) {
-							currObj['width'] = inputRangeVal;
-						}
-						$(inputRangeName + '-lbl').textContent = currObj['width'] + " m";
-					}
-					if (currObj.height) {
-						maxHeight = Math.max(maxHeight, currObj.height);
-					}
+				if (currObj.height) {
+					maxHeight = Math.max(maxHeight, currObj.height);
 				}
 			});
-			console.log("maxheight: " + maxHeight);
-
-			var currPosLeft = 0;
-			renderorder_streetlevel_left.forEach(function (currObjName) {
-				var currObj = objectdefs[currObjName];
-				if (currObj) {
-					updateAllBounds(currObj, maxHeight, currPosLeft);
-					currPosLeft += currObj.width;
-				} else
-					console.log("illegal objectname: " + currObjName);
-			});
-
-			var currPosLeft = 0;
-			renderorder_streetlevel_right.forEach(function (currObjName) {
-				var currObj = objectdefs[currObjName];
-				if (currObj) {
-					currPosLeft -= currObj.width;
-					updateAllBounds(currObj, maxHeight, currPosLeft);
-				} else
-					console.log("illegal objectname: " + currObjName);
-			});
-			canvas.renderAll();
+			return maxHeight;
 		}
 
-		function updateAllBounds(currObj, maxHeight, currPosLeft) {
+		function updateRenders(renderorder, signX, signY) {
+			var maxHeight = calcMaxHeight();
+			var currPosLeft = signX > 0 ? 0 : calcWidthSum(objectdefs, wobj_full);
+			renderorder.forEach(function (currObjName) {
+				var currObj = objectdefs[currObjName];
+				if (currObj) {
+					if (signX < 0)
+						currPosLeft -= currObj.width;
+					updateAllBounds(currObj, maxHeight, currPosLeft, signY);
+					if (signX > 0)
+						currPosLeft += currObj.width;
+				} else
+					console.log("illegal objectname: " + currObjName);
+			});
+		}
+
+		function updateAllBounds(currObj, maxHeight, currPosLeft, signY) {
 			currPosRight = currPosLeft + currObj.width;
-			currPosTop = maxHeight - currObj.height;
+			currPosTop = maxHeight - (currObj.height * signY);
 			currBelowLevel = currObj.below_level * 0.2;
 			setRectDims(currObj['rect_top'], currPosLeft, currPosTop, currObj.width, currObj.height);
 			setRectDims(currObj['rect_text'], currPosLeft, maxHeight + currBelowLevel, currObj.width, 0.2);
-			setRectDims(currObj['line_left'], currPosLeft, currPosTop, -1, currObj.height + currBelowLevel);
-			setRectDims(currObj['line_right'], currPosRight, currPosTop, -1, currObj.height + currBelowLevel);
-
-		}
-
-		function addCanvas(canvas, graphicElement) {
-			if (graphicElement) {
-				canvas.add(graphicElement);
+			setRectDims(currObj['line_left'], currPosLeft, currPosTop, null, currObj.height + currBelowLevel);
+			setRectDims(currObj['line_right'], currPosRight, currPosTop, null, currObj.height + currBelowLevel);
+			if (currObj['text_bottom']) {
+				currObj['text_bottom'].text = currObj.width.toFixed(2) + " m";
+				currObj['text_bottom'].top = cP(maxHeight + currBelowLevel);
+				currObj['text_bottom'].left = cP(currPosLeft + currObj.width / 2) - currObj['text_bottom'].width / 2;
+				currObj['text_bottom'].set('dirty', true);
 			}
+			setRectDims(currObj['image_obj'], currPosLeft, currPosTop, currObj.width, currObj.height);
 		}
+
 		var canvas;
 		(function () {
 
@@ -345,6 +295,7 @@
 				addCanvas(canvas, currObj['rect_text']);
 				addCanvas(canvas, currObj['line_left']);
 				addCanvas(canvas, currObj['line_right']);
+				addCanvas(canvas, currObj['text_bottom']);
 				if (currObj['inputRangeName']) {
 					var currRangeControl = $(currObj['inputRangeName'] + '-control');
 					currRangeControl.oninput = function () {
@@ -362,6 +313,43 @@
 			var fullwidth_m = calcWidthSum(objectdefs, wobj_full);
 			var m_per_pixel = canvas.width / fullwidth_m;
 			return Math.round(meters * m_per_pixel);
+		}
+
+		function calcWidthSum(objectdefs, objectNames) {
+			var res = 0;
+			objectNames.forEach(function (currObj) {
+				res += objectdefs[currObj]['width'];
+			});
+			return res;
+		}
+
+		function setRectDims(rect, m_left, m_top, m_width, m_height) {
+			if (rect) {
+				rect.left = cP(m_left);
+				rect.top = cP(m_top);
+				if (m_width)
+					rect.width = cP(m_width);
+				if (m_height)
+					rect.height = cP(m_height);
+				rect.set('dirty', true);
+			}
+		}
+
+		function addCanvas(canvas, graphicElement) {
+			if (graphicElement) {
+				canvas.add(graphicElement);
+			}
+		}
+
+		function initRect(currObj, colorFieldName, rectFieldName) {
+			if (currObj[colorFieldName]) {
+				currObj[rectFieldName] = new fabric.Rect({
+					fill: currObj[colorFieldName],
+					selectable: false,
+					resizable: false,
+					width: 1
+				});
+			}
 		}
 
 
