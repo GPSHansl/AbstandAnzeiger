@@ -47,6 +47,10 @@
 			<label><span>Abstand Fahrbahnrand:</span> <input type="range" id="distance_right-control" value="0.4"
 					min="-1.0" max="4.0" step="0.01">&nbsp;(<span id="distance_right-lbl"></span>)</label>
 		</p>
+		<p>
+			<label><input type="checkbox" id="car_parking-visible" value="false"><span>Parker Fahrbahnrand:</span> <input type="range" id="car_parking-control" value="0.4"
+					min="-3.0" max="4.0" step="0.01">&nbsp;(<span id="car_parking-lbl"></span>)</label>
+		</p>
 	</div>
 
 
@@ -149,9 +153,9 @@
 				'rect_color': default_col_cyclist,
 				'text_bgcolor': default_col_cyclist,
 				'line_color': default_col_cyclist,
-				'keep_aspect': true,
+				'keep_aspect': false,
 				'below_level': 2,
-				'imageurl': "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/radler.png",
+				'imageurl': "pics/radler.png",
 				'inputRangeName': 'cyclist'
 			},
 			'distance_car': {
@@ -167,18 +171,30 @@
 				'rect_color': default_col_car,
 				'text_bgcolor': default_col_car,
 				'line_color': default_col_car,
-				'keep_aspect': true,
+				'keep_aspect': false,
 				'below_level': 2,
-				'imageurl': "https://gitlab.com/joschtl/ueberholabstand/-/raw/master/auto_mit.png",
+				'imageurl': "pics/auto_mit.png",
 				'inputRangeName': 'car'
+			},
+			'car_parking': {
+				'width': default_width_car,
+				'height': default_height_car,
+				'rect_color': default_col_car,
+				'text_bgcolor': default_col_car,
+				'line_color': default_col_car,
+				'keep_aspect': false,
+				'below_level': 2,
+				'imageurl': "pics/suv_mit.png",
+				'inputRangeName': 'car_parking'
 			}
+
 		};
 
 		var wobj_full = ['border_left', 'verge_left', 'marking_left', 'street', 'marking_right', 'verge_right', 'border_right'];
 		var renderorder_streetlevel_left = ['border_left', 'verge_left', 'marking_left', 'street'];
 		var renderorder_streetlevel_right = ['border_right', 'verge_right', 'marking_right', 'lane', 'marking_center'];
 		var renderorder_abovestreetlevel_right = ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist', 'distance_car', 'car'];
-
+		var renderorder_abovestreetlevel_offstreet = ['car_parking'];
 		// build rects
 		Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
 			var currObj = objectdefs[currObjName];
@@ -221,10 +237,10 @@
 				});
 				var fullwidth_m = calcWidthSum(objectdefs, wobj_full);
 				
-				updateRenders(renderorder_streetlevel_left, +1, 0);
-				updateRenders(renderorder_abovestreetlevel_right, -1, 1);
-				updateRenders(renderorder_streetlevel_right, -1, 0);
-
+				updateRenders(renderorder_streetlevel_left, draw_start_position.left, draw_horizontal_direction.to_right, draw_vertical_position.below_baseline);
+				updateRenders(renderorder_abovestreetlevel_right, draw_start_position.right, draw_horizontal_direction.to_left, draw_vertical_position.above_baseline);
+				updateRenders(renderorder_streetlevel_right, draw_start_position.right, draw_horizontal_direction.to_left, draw_vertical_position.below_baseline);
+				updateRenders(renderorder_abovestreetlevel_offstreet, draw_start_position.right, draw_horizontal_direction.to_right, draw_vertical_position.above_baseline);
 				canvas.renderAll();
 			}
 		}
@@ -240,16 +256,20 @@
 			return maxHeight;
 		}
 
-		function updateRenders(renderorder, signX, signY) {
+		const draw_start_position = { left: -1, right: +1};
+		const draw_horizontal_direction = { to_left: -1, to_right: +1};
+		const draw_vertical_position = { above_baseline: 1, below_baseline: 0};
+
+		function updateRenders(renderorder, draw_start_pos, draw_hor_dir, signY) {
 			var maxHeight = calcMaxHeight();
-			var currPosLeft = signX > 0 ? 0 : calcWidthSum(objectdefs, wobj_full);
+			var currPosLeft = draw_start_pos==draw_start_position.left ? 0 : calcWidthSum(objectdefs, wobj_full);
 			renderorder.forEach(function (currObjName) {
 				var currObj = objectdefs[currObjName];
 				if (currObj) {
-					if (signX < 0)
+					if (draw_hor_dir==draw_horizontal_direction.to_left)
 						currPosLeft -= currObj.width;
 					updateAllBounds(currObj, maxHeight, currPosLeft, signY);
-					if (signX > 0)
+					if (draw_hor_dir==draw_horizontal_direction.to_right)
 						currPosLeft += currObj.width;
 				} else
 					console.log("illegal objectname: " + currObjName);
