@@ -25,11 +25,11 @@
 	<div id="controls" class="controls">
 		<p>
 			<label><span>Abstand:</span> <input type="range" id="distance_car-control" value="0.1" min="-0.5" max="3"
-					step="0.05">&nbsp;(<span id="distance_car-lbl"></span>)</label>
+					step="0.1">&nbsp;(<span id="distance_car-lbl"></span>)</label>
 		</p>
 		<p>
 			<label><span>KFZ Breite:</span> <input type="range" id="car-control" value="2" min="0.6" max="3.0"
-					step="0.05">&nbsp;(<span id="car-lbl"></span>)</label>
+					step="0.1">&nbsp;(<span id="car-lbl"></span>)</label>
 		</p>
 		<p>
 			<label><span>Fahrbahnbreite:</span> <input type="range" id="lane-control" value="12" min="0.6" max="15"
@@ -41,15 +41,15 @@
 		</p>
 		<p>
 			<label><span>Radfahrer Breite:</span> <input type="range" id="cyclist-control" value="0.8" min="0.5"
-					max="2.8" step="0.01">&nbsp;(<span id="cyclist-lbl"></span>)</label>
+					max="2.8" step="0.1">&nbsp;(<span id="cyclist-lbl"></span>)</label>
 		</p>
 		<p>
 			<label><span>Abstand Fahrbahnrand:</span> <input type="range" id="distance_right-control" value="0.4"
-					min="-1.0" max="4.0" step="0.01">&nbsp;(<span id="distance_right-lbl"></span>)</label>
+					min="-1.0" max="4.0" step="0.1">&nbsp;(<span id="distance_right-lbl"></span>)</label>
 		</p>
 		<p>
-			<label><input type="checkbox" id="car_parking-visible" value="false"><span>Parker Fahrbahnrand:</span> <input type="range" id="car_parking-control" value="0.4"
-					min="-3.0" max="4.0" step="0.01">&nbsp;(<span id="car_parking-lbl"></span>)</label>
+			<label><span>Parker Fahrbahnrand:</span> <input type="range" id="distance_parking_car-control" value="-0.0"
+					min="-3.0" max="0.0" step="0.1">&nbsp;(<span id="distance_parking_car-lbl"></span>)</label>
 		</p>
 	</div>
 
@@ -176,16 +176,27 @@
 				'imageurl': "pics/auto_mit.png",
 				'inputRangeName': 'car'
 			},
+			'distance_parking_car': {
+				'width': 0,
+				'height': 0,
+				'rect_color': null,
+				'text_bgcolor': null,
+				'line_color': null,
+				'keep_aspect': false,
+				'below_level': 2,
+				'imageurl': null,
+				'inputRangeName': 'distance_parking_car'
+			},
 			'car_parking': {
 				'width': default_width_car,
 				'height': default_height_car,
-				'rect_color': default_col_car,
-				'text_bgcolor': default_col_car,
-				'line_color': default_col_car,
+				'rect_color': null,
+				'text_bgcolor': null,
+				'line_color': null,
 				'keep_aspect': false,
 				'below_level': 2,
 				'imageurl': "pics/suv_mit.png",
-				'inputRangeName': 'car_parking'
+				'inputRangeName': null
 			}
 
 		};
@@ -194,7 +205,7 @@
 		var renderorder_streetlevel_left = ['border_left', 'verge_left', 'marking_left', 'street'];
 		var renderorder_streetlevel_right = ['border_right', 'verge_right', 'marking_right', 'lane', 'marking_center'];
 		var renderorder_abovestreetlevel_right = ['border_right', 'verge_right', 'marking_right', 'distance_right', 'cyclist', 'distance_car', 'car'];
-		var renderorder_abovestreetlevel_offstreet = ['car_parking'];
+		var renderorder_abovestreetlevel_offstreet = ['distance_parking_car', 'car_parking'];
 		// build rects
 		Object.getOwnPropertyNames(objectdefs).forEach(function (currObjName) {
 			var currObj = objectdefs[currObjName];
